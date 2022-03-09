@@ -1,0 +1,7 @@
+streamlit
+# install streamlit components
+streamlit-folium
+streamlit-bokeh-events
+geopy
+#git+https://github.com/giswqs/leafmap
+#git+https://github.com/giswqs/geemap
