@@ -114,9 +114,12 @@ if address_from and address_to:
     # find the shortest path
     route = nx.shortest_path(graph, orig_node, dest_node, weight=optimizer.lower())
 
-    #node_pairs = zip(route[:-1], route[1:])
-    #uvk = ((u, v, min(graph[u][v], key=lambda k: graph[u][v][k]["length"])) for u, v in node_pairs)
-    #gdf_edges = ox.utils_graph.graph_to_gdfs(graph.subgraph(route), nodes=False).loc[uvk]
+    node_pairs = zip(route[:-1], route[1:])
+    uvk = ((u, v, min(graph[u][v], key=lambda k: graph[u][v][k]["length"])) for u, v in node_pairs)
+    # class 'geopandas.geodataframe.GeoDataFrame'
+    gdf_edges = ox.utils_graph.graph_to_gdfs(graph.subgraph(route), nodes=False).loc[uvk]
+    # list of shapely.geometry.linestring.LineString objects
+    #gdf_edges['geometry'].values)
 
     #print(route)
 
