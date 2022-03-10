@@ -8,6 +8,10 @@ import folium
 from bokeh.models.widgets import Button
 from bokeh.models import CustomJS
 from geopy.geocoders import Nominatim
+
+from shapely.geometry import LineString
+
+import shapely
 import osmnx as ox
 import networkx as nx
 
@@ -19,7 +23,7 @@ import networkx as nx
 #   4. Get coordinates from a click on the map: bidirectional communication between Folium JS and Python 
 
 BASEMAPS = ['OpenStreetMap', 'Roadmap', 'Satellite', 'Terrain', 'Hybrid']
-TRAVEL_MODE = ['Walk', 'Drive', 'Bike', 'Walk']
+TRAVEL_MODE = ['Walk', 'Drive', 'Bike']
 TRAVEL_OPTIMIZER = ['Time', 'Length']
 
 ADDRESS_DEFAULT = "Grand Place"
@@ -90,13 +94,12 @@ m.add_basemap(basemap)
 popup = f"lat, lon: {lat}, {lon}"
 m.add_marker(location=(lat, lon), popup=popup)
 #m.to_streamlit()
-#{'last_clicked': {'lat': 50.79705198089481, 'lng': 4.3369388580322275}, 'last_object_clicked': None, 'all_drawings': None, 'last_active_drawing': None, 'bounds': {'_southWest': {'lat': 50.79162657276397, 'lng': 4.332754611968995}, '_northEast': {'lat': 50.80112062370733, 'lng': 4.343483448028565}}}
-mapdata = st_folium(m, height = 800, width = 1800)
+#mapdata = st_folium(m, height = 800, width = 1800)
 
-if mapdata:
-    if mapdata['last_clicked']:
-        marker = mapdata['last_clicked']
-        #m.add_marker(location=(marker['lat'], marker['lng']))#, popup=popup)
+#if mapdata:
+#    if mapdata['last_clicked']:
+#        marker = mapdata['last_clicked']
+#        #m.add_marker(location=(marker['lat'], marker['lng']))#, popup=popup)
 
 if address_from and address_to:
 
@@ -117,10 +120,17 @@ if address_from and address_to:
     node_pairs = zip(route[:-1], route[1:])
     uvk = ((u, v, min(graph[u][v], key=lambda k: graph[u][v][k]["length"])) for u, v in node_pairs)
     # class 'geopandas.geodataframe.GeoDataFrame'
-    gdf_edges = ox.utils_graph.graph_to_gdfs(graph.subgraph(route), nodes=False).loc[uvk]
-    # list of shapely.geometry.linestring.LineString objects
-    #gdf_edges['geometry'].values)
+    gdf = ox.utils_graph.graph_to_gdfs(graph.subgraph(route), nodes=False).loc[uvk]
 
-    #print(route)
+    pol = gdf['geometry'].values
 
-    shortest_route_map = ox.plot_route_folium(graph, route, m)
+    for i, vals in enumerate(pol):
+        locations = [(lat, lng) for lng, lat in vals.coords]
+        if i == 0:
+            m.add_marker(location=locations[0])
+        elif i == len(pol)-1:
+            m.add_marker(location=locations[-1])
+        folium.PolyLine(locations).add_to(m)
+
+    #shortest_route_map = ox.plot_route_folium(graph, route, m)
+m.to_streamlit()
