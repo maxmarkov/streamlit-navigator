@@ -111,26 +111,31 @@ if address_from and address_to:
 
     # find the nearest node to the start location
     orig_node = ox.get_nearest_node(graph, (location_from.latitude, location_from.longitude))
+    m.add_marker(location=[location_from.latitude, location_from.longitude], color='red')
+
     # find the nearest node to the end location
     dest_node = ox.get_nearest_node(graph, (location_to.latitude, location_to.longitude))
+    m.add_marker(location=[location_to.latitude, location_to.longitude], color='green')
 
     # find the shortest path
     route = nx.shortest_path(graph, orig_node, dest_node, weight=optimizer.lower())
 
-    node_pairs = zip(route[:-1], route[1:])
-    uvk = ((u, v, min(graph[u][v], key=lambda k: graph[u][v][k]["length"])) for u, v in node_pairs)
-    # class 'geopandas.geodataframe.GeoDataFrame'
-    gdf = ox.utils_graph.graph_to_gdfs(graph.subgraph(route), nodes=False).loc[uvk]
+    #node_pairs = zip(route[:-1], route[1:])
+    #uvk = ((u, v, min(graph[u][v], key=lambda k: graph[u][v][k]["length"])) for u, v in node_pairs)
+    ## class 'geopandas.geodataframe.GeoDataFrame'
+    #gdf = ox.utils_graph.graph_to_gdfs(graph.subgraph(route), nodes=False).loc[uvk]
 
-    pol = gdf['geometry'].values
+    #pol = gdf['geometry'].values
 
-    for i, vals in enumerate(pol):
-        locations = [(lat, lng) for lng, lat in vals.coords]
-        if i == 0:
-            m.add_marker(location=locations[0])
-        elif i == len(pol)-1:
-            m.add_marker(location=locations[-1])
-        folium.PolyLine(locations).add_to(m)
+    #for i, vals in enumerate(pol):
+    #    #locations = [(lat, lng) for lng, lat in vals.coords]
+    #    #if i == 0:
+    #    #    m.add_marker(location=locations[0])
+    #    #elif i == len(pol)-1:
+    #    #    m.add_marker(location=locations[-1])
+    #    for pts in vals.coords:
+    #        m.add_marker(location=[pts[1],pts[0]])
+    #    #folium.PolyLine(locations).add_to(m)
 
-    #shortest_route_map = ox.plot_route_folium(graph, route, m)
+    shortest_route_map = ox.plot_route_folium(graph, route, m)
 m.to_streamlit()
