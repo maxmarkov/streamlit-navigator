@@ -1,23 +1,22 @@
 import streamlit as st
-from bokeh.models.widgets import Button
-from bokeh.models import CustomJS
 from streamlit_bokeh_events import streamlit_bokeh_events
 from streamlit_folium import st_folium
+
 import leafmap.foliumap as leafmap
 import folium
+
+from bokeh.models.widgets import Button
+from bokeh.models import CustomJS
 from geopy.geocoders import Nominatim
 import osmnx as ox
 import networkx as nx
 
 # https://habr.com/en/amp/post/654239/
-# TODO
-# Get coordinates from click on the map: needs to be a bidirectional communication
-# folium.Marker(
-#    location=[45.3311, -121.7113],
-#    popup="Timberline Lodge",
-#    icon=folium.Icon(color="green"),
-#).add_to(m)
-# Plot it as a layer
+# TODO:
+#   1. Plot a path graph on top of folium map
+#   2. Path and request cleanup button
+#   3. Code refactoring
+#   4. Get coordinates from a click on the map: bidirectional communication between Folium JS and Python 
 
 BASEMAPS = ['OpenStreetMap', 'Roadmap', 'Satellite', 'Terrain', 'Hybrid']
 TRAVEL_MODE = ['Walk', 'Drive', 'Bike', 'Walk']
@@ -29,15 +28,15 @@ st.set_page_config(page_title="🚋 Route finder", layout="wide")
 
 # ====== SIDEBAR ======
 with st.sidebar:
-    st.sidebar.title("Choose you travel settings")
-    basemap = st.sidebar.selectbox("Choose basemap", BASEMAPS)
-    transport = st.sidebar.selectbox("Choose transport", TRAVEL_MODE)
-    optimizer = st.sidebar.selectbox("Choose optimizer", TRAVEL_OPTIMIZER)
+    st.title("Choose you travel settings")
+    basemap = st.selectbox("Choose basemap", BASEMAPS)
+    transport = st.selectbox("Choose transport", TRAVEL_MODE)
+    optimizer = st.selectbox("Choose optimizer", TRAVEL_OPTIMIZER)
 
-    address = st.sidebar.text_input("Location")
+    address = st.text_input("Location")
 
-    address_from = st.sidebar.text_input("Go from")
-    address_to = st.sidebar.text_input("Go to")
+    address_from = st.text_input("Go from")
+    address_to = st.text_input("Go to")
 
     locator = Nominatim(user_agent = "myapp")
 
