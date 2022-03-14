@@ -17,18 +17,39 @@ import networkx as nx
 
 # https://habr.com/en/amp/post/654239/
 # TODO:
-#   1. Plot a path graph on top of folium map
+#   1. Plot a path graph on top of folium map: first and last sectors are missing
+#   place name to graph to place
 #   2. Path and request cleanup button
 #   3. Code refactoring
 #   4. Get coordinates from a click on the map: bidirectional communication between Folium JS and Python 
 
-BASEMAPS = ['OpenStreetMap', 'Roadmap', 'Satellite', 'Terrain', 'Hybrid']
-TRAVEL_MODE = ['Walk', 'Drive', 'Bike']
-TRAVEL_OPTIMIZER = ['Time', 'Length']
+BASEMAPS = ['SATELLITE', 'OpenStreetMap', 'Roadmap', 'Terrain', 'Hybrid']
+TRAVEL_MODE = ['Drive', 'Walk', 'Bike']
+TRAVEL_OPTIMIZER = ['Length', 'Time']
 
 ADDRESS_DEFAULT = "Grand Place"
 
 st.set_page_config(page_title="🚋 Route finder", layout="wide")
+
+def plot_route_folium(graph, route, m):
+    """ """
+    node_pairs = zip(route[:-1], route[1:])
+    uvk = ((u, v, min(graph[u][v], key=lambda k: graph[u][v][k]["length"])) for u, v in node_pairs)
+    # class 'geopandas.geodataframe.GeoDataFrame'
+    gdf = ox.utils_graph.graph_to_gdfs(graph.subgraph(route), nodes=False).loc[uvk]
+
+    pol = gdf['geometry'].values
+
+    for i, vals in enumerate(pol):
+        locations = [(lat, lng) for lng, lat in vals.coords]
+    #    if i == 0:
+    #        m.add_marker(location=locations[0])
+    #    elif i == len(pol)-1:
+    #        m.add_marker(location=locations[-1])
+        for pts in vals.coords:
+            m.add_marker(location=[pts[1],pts[0]])
+        folium.PolyLine(locations).add_to(m)
+
 
 # ====== SIDEBAR ======
 with st.sidebar:
@@ -92,8 +113,8 @@ st.write(f"Lat, Lon: {lat}, {lon}")
 m = leafmap.Map(center=(lat, lon), zoom=16)
 m.add_basemap(basemap)
 popup = f"lat, lon: {lat}, {lon}"
-m.add_marker(location=(lat, lon), popup=popup)
-#m.to_streamlit()
+# https://fontawesome.com/v4/icons/
+m.add_marker(location=(lat, lon), popup=popup, icon=folium.Icon(color='green', icon='eye', prefix='fa'))
 #mapdata = st_folium(m, height = 800, width = 1800)
 
 #if mapdata:
@@ -106,36 +127,21 @@ if address_from and address_to:
     location_from = locator.geocode(address_from)
     location_to = locator.geocode(address_to)
     print(f' FROM: {location_from},\n TO: {location_to}')
-
-    graph = ox.graph_from_place(address_from, network_type = transport.lower())
+    place_name = "Brussels"
+    graph = ox.graph_from_place(place_name, network_type = transport.lower())
 
     # find the nearest node to the start location
     orig_node = ox.get_nearest_node(graph, (location_from.latitude, location_from.longitude))
-    m.add_marker(location=[location_from.latitude, location_from.longitude], color='red')
+    m.add_marker(location=[location_from.latitude, location_from.longitude], icon=folium.Icon(color='lightgray', icon='home', prefix='fa'))
 
     # find the nearest node to the end location
     dest_node = ox.get_nearest_node(graph, (location_to.latitude, location_to.longitude))
-    m.add_marker(location=[location_to.latitude, location_to.longitude], color='green')
+    m.add_marker(location=[location_to.latitude, location_to.longitude], Color='Green')
 
     # find the shortest path
     route = nx.shortest_path(graph, orig_node, dest_node, weight=optimizer.lower())
 
-    #node_pairs = zip(route[:-1], route[1:])
-    #uvk = ((u, v, min(graph[u][v], key=lambda k: graph[u][v][k]["length"])) for u, v in node_pairs)
-    ## class 'geopandas.geodataframe.GeoDataFrame'
-    #gdf = ox.utils_graph.graph_to_gdfs(graph.subgraph(route), nodes=False).loc[uvk]
-
-    #pol = gdf['geometry'].values
-
-    #for i, vals in enumerate(pol):
-    #    #locations = [(lat, lng) for lng, lat in vals.coords]
-    #    #if i == 0:
-    #    #    m.add_marker(location=locations[0])
-    #    #elif i == len(pol)-1:
-    #    #    m.add_marker(location=locations[-1])
-    #    for pts in vals.coords:
-    #        m.add_marker(location=[pts[1],pts[0]])
-    #    #folium.PolyLine(locations).add_to(m)
-
+    #plot_route_folium(graph, route, m)
     shortest_route_map = ox.plot_route_folium(graph, route, m)
+
 m.to_streamlit()
