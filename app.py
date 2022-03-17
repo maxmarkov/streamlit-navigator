@@ -1,147 +1,100 @@
 import streamlit as st
-from streamlit_bokeh_events import streamlit_bokeh_events
-from streamlit_folium import st_folium
-
-import leafmap.foliumap as leafmap
 import folium
-
-from bokeh.models.widgets import Button
-from bokeh.models import CustomJS
-from geopy.geocoders import Nominatim
-
-from shapely.geometry import LineString
-
-import shapely
-import osmnx as ox
+import osmnx
 import networkx as nx
+import leafmap.foliumap as leafmap
 
-# https://habr.com/en/amp/post/654239/
 # TODO:
-#   1. Plot a path graph on top of folium map: first and last sectors are missing
-#   place name to graph to place
-#   2. Path and request cleanup button
-#   3. Code refactoring
-#   4. Get coordinates from a click on the map: bidirectional communication between Folium JS and Python 
+#   Graph from bbox
+#   Cleanup button
 
-BASEMAPS = ['SATELLITE', 'OpenStreetMap', 'Roadmap', 'Terrain', 'Hybrid']
+BASEMAPS = ['Satellite', 'Roadmap', 'Terrain', 'Hybrid', 'OpenStreetMap']
 TRAVEL_MODE = ['Drive', 'Walk', 'Bike']
 TRAVEL_OPTIMIZER = ['Length', 'Time']
 
-ADDRESS_DEFAULT = "Grand Place"
+ADDRESS_DEFAULT = "Grand Place, Bruxelles"
+
+def get_location_from_address(address: str) -> (float, float):
+    """ """
+    from geopy.geocoders import Nominatim
+
+    locator = Nominatim(user_agent = "myapp")
+    location = locator.geocode(address)
+
+    return location.latitude, location.longitude
+
+def get_graph(address1, address2):
+    """ """
+    location1 = get_location_from_address(address1)
+    location2 = get_location_from_address(address2)
+
+    north = max(location1[0],location2[0])
+    south = min(location1[0],location2[0])
+    west = max(location1[1],location2[1])
+    east = min(location1[1],location2[1])
+    print(f'NS {north}, {south}')
+    print(f'WE {west}, {east}')
+    graph = osmnx.graph.graph_from_bbox(north, south, east, west, network_type='drive', clean_periphery=True)
+
+    return graph
+
 
 st.set_page_config(page_title="🚋 Route finder", layout="wide")
 
-def plot_route_folium(graph, route, m):
-    """ """
-    node_pairs = zip(route[:-1], route[1:])
-    uvk = ((u, v, min(graph[u][v], key=lambda k: graph[u][v][k]["length"])) for u, v in node_pairs)
-    # class 'geopandas.geodataframe.GeoDataFrame'
-    gdf = ox.utils_graph.graph_to_gdfs(graph.subgraph(route), nodes=False).loc[uvk]
-
-    pol = gdf['geometry'].values
-
-    for i, vals in enumerate(pol):
-        locations = [(lat, lng) for lng, lat in vals.coords]
-    #    if i == 0:
-    #        m.add_marker(location=locations[0])
-    #    elif i == len(pol)-1:
-    #        m.add_marker(location=locations[-1])
-        for pts in vals.coords:
-            m.add_marker(location=[pts[1],pts[0]])
-        folium.PolyLine(locations).add_to(m)
-
-
 # ====== SIDEBAR ======
 with st.sidebar:
+
     st.title("Choose you travel settings")
+
+    st.markdown("A simple app that finds and displays the shortest path between two points on a map.")
+
     basemap = st.selectbox("Choose basemap", BASEMAPS)
     transport = st.selectbox("Choose transport", TRAVEL_MODE)
     optimizer = st.selectbox("Choose optimizer", TRAVEL_OPTIMIZER)
 
-    address = st.text_input("Location")
-
     address_from = st.text_input("Go from")
     address_to = st.text_input("Go to")
 
-    locator = Nominatim(user_agent = "myapp")
-
-    if not address:
-        address = ADDRESS_DEFAULT
-    
-    location = locator.geocode(address)
-    
-    location_latlon = [location.latitude, location.longitude]
-    
-    if basemap in BASEMAPS[1:]:
+    if basemap in BASEMAPS[:-1]:
         basemap=basemap.upper()
 
-    # Define bokeh Button instance
-    # https://docs.bokeh.org/en/latest/docs/reference/models/widgets/buttons.html
-    loc_button = Button(label="Get Device Location", width_policy = 'auto', margin = (0, 0, 0, 0), height_policy = 'auto')
-    loc_button.js_on_event(
-        "button_click",
-        CustomJS(
-            code="""
-        navigator.geolocation.getCurrentPosition(
-            (loc) => {
-                document.dispatchEvent(new CustomEvent("GET_LOCATION", {detail: {lat: loc.coords.latitude, lon: loc.coords.longitude}}))
-            }
-        )
-        """
-        ),
-    )
-    
-    # streamlit event
-    result = streamlit_bokeh_events(
-        loc_button,
-        events="GET_LOCATION",
-        key="get_location",
-        refresh_on_update=False,
-        override_height=35,
-        debounce_time=0,
+    st.info(
+        "This is an open source project and you are very welcome to contribute your "
+        "comments, questions, resources and apps as "
+        "[issues](https://github.com/maxmarkov/streamlit-navigator/issues) or "
+        "[pull requests](https://github.com/maxmarkov/streamlit-navigator/pulls) "
+        "to the [source code](https://github.com/maxmarkov/streamlit-navigator). "
     )
 
-    if result:
-        if "GET_LOCATION" in result:
-            loc = result.get("GET_LOCATION")
-            location_latlon = [loc.get("lat"), loc.get("lon")]
 
 
-lat, lon = location_latlon[0], location_latlon[1]
+
+# ====== MAIN PAGE ======
+lat, lon = get_location_from_address(address=ADDRESS_DEFAULT)
 st.write(f"Lat, Lon: {lat}, {lon}")
 
 m = leafmap.Map(center=(lat, lon), zoom=16)
+m.add_marker(location=(lat, lon), popup=f"lat, lon: {lat}, {lon}", icon=folium.Icon(color='green', icon='eye', prefix='fa'))
+
 m.add_basemap(basemap)
-popup = f"lat, lon: {lat}, {lon}"
-# https://fontawesome.com/v4/icons/
-m.add_marker(location=(lat, lon), popup=popup, icon=folium.Icon(color='green', icon='eye', prefix='fa'))
-#mapdata = st_folium(m, height = 800, width = 1800)
 
-#if mapdata:
-#    if mapdata['last_clicked']:
-#        marker = mapdata['last_clicked']
-#        #m.add_marker(location=(marker['lat'], marker['lng']))#, popup=popup)
-
+# === FIND PATH === 
 if address_from and address_to:
 
-    location_from = locator.geocode(address_from)
-    location_to = locator.geocode(address_to)
-    print(f' FROM: {location_from},\n TO: {location_to}')
-    place_name = "Brussels"
-    graph = ox.graph_from_place(place_name, network_type = transport.lower())
+    graph = get_graph(address_from, address_to)
 
-    # find the nearest node to the start location
-    orig_node = ox.get_nearest_node(graph, (location_from.latitude, location_from.longitude))
-    m.add_marker(location=[location_from.latitude, location_from.longitude], icon=folium.Icon(color='lightgray', icon='home', prefix='fa'))
+    ## find the nearest node to the start location
+    #orig_node = ox.get_nearest_node(graph, (location_from.latitude, location_from.longitude))
+    #m.add_marker(location=[location_from.latitude, location_from.longitude], icon=folium.Icon(color='lightgray', icon='home', prefix='fa'))
 
-    # find the nearest node to the end location
-    dest_node = ox.get_nearest_node(graph, (location_to.latitude, location_to.longitude))
-    m.add_marker(location=[location_to.latitude, location_to.longitude], Color='Green')
+    ## find the nearest node to the end location
+    #dest_node = ox.get_nearest_node(graph, (location_to.latitude, location_to.longitude))
+    #m.add_marker(location=[location_to.latitude, location_to.longitude], Color='Green')
 
-    # find the shortest path
-    route = nx.shortest_path(graph, orig_node, dest_node, weight=optimizer.lower())
+    ## find the shortest path
+    #route = nx.shortest_path(graph, orig_node, dest_node, weight=optimizer.lower())
 
-    #plot_route_folium(graph, route, m)
-    shortest_route_map = ox.plot_route_folium(graph, route, m)
+    ##plot_route_folium(graph, route, m)
+    #shortest_route_map = ox.plot_route_folium(graph, route, m)
 
 m.to_streamlit()
