@@ -54,6 +54,40 @@ def get_graph(address_orig: str, address_dest: str) -> (MultiDiGraph, Tuple[floa
 
     return graph, location_orig, location_dest
 
+
+def get_graph_from_mode(address_orig: str, address_dest: str, mode: str, city: str="Brussels", dist: float=1000.) -> (MultiDiGraph, Tuple[float], Tuple[float]):
+    """
+    Convert the origin and destination addresses into (lat, long) coordinates and find the
+    graph of streets from the bounding box.
+    Args:
+        address_orig: departure address
+        address_dest: arrival address
+        mode: get graph from place or from address
+        city: name of the city/town
+        dist: distance from the original address in meters
+    Returns:
+        graph: street graph from OpenStreetMap
+        location_orig: departure coordinates
+        location_dest: arrival coordinates
+    Examples:
+        graph, location_orig, location_dest = get_graph_from_mode("Gare du Midi, Bruxelles", "Gare du Nord, Bruxelles", mode="place", city="Bruxelles")
+        graph, location_orig, location_dest = get_graph_from_mode("Gare du Midi, Bruxelles", "Gare du Nord, Bruxelles", mode="address", dist=2000)
+    """
+
+    assert mode in ['place', 'address']
+
+    # find location by address
+    location_orig = get_location_from_address(address_orig)
+    location_dest = get_location_from_address(address_dest)
+
+    if mode == 'place':
+        graph = osmnx.graph_from_place(city, network_type = 'drive')
+    else:
+        graph = osmnx.graph.graph_from_address(address_orig, dist=dist, dist_type='bbox', network_type = 'drive')
+
+    return graph, location_orig, location_dest
+
+
 def find_shortest_path(graph: MultiDiGraph, location_orig: Tuple[float], location_dest: Tuple[float], optimizer: str) -> List[int]:
     """
     Find the shortest path between two points from the street graph
