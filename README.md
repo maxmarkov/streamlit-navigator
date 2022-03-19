@@ -2,14 +2,12 @@
 
 Simple application similar to Google Maps which can be used to find directions between two points. The path is then shown on a map.
 
+![show different maps](demo/demo_map_change.gif)
+
 List of current functionalities:
 
-- [x] Show different types of basemap
-- [x] Location selectbox
-- [x] Get device location button   
+- [x] Show different types of basemap 
 - [x] Show the shortest path between two selected points
-- [x] Refactor the code
-- [ ] Graph by city name
 - [ ] Description
 - [ ] Docker
 
