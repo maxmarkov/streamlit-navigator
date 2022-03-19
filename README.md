@@ -7,8 +7,11 @@ List of current functionalities:
 - [x] Show different types of basemap
 - [x] Location selectbox
 - [x] Get device location button   
-- [ ] Show the shortest path between two selected points
-- [ ] Refactor the code
+- [x] Show the shortest path between two selected points
+- [x] Refactor the code
+- [ ] Graph by city name
+- [ ] Description
+- [ ] Docker
 
 ## Installation
 ```
