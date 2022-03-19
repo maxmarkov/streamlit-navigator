@@ -64,8 +64,9 @@ m.add_basemap(basemap)
 if address_from and address_to:
 
     # === FIND PATH ===
-    #graph, location_orig, location_dest = get_graph(address_from, address_to)
-    graph, location_orig, location_dest = get_graph_from_mode(address_from, address_to, mode="place", city="Bruxelles")
+    graph, location_orig, location_dest = get_graph(address_from, address_to)
+    # = Alternative options (mode='place' seems to be the fastest) =
+    #graph, location_orig, location_dest = get_graph_from_mode(address_from, address_to, mode="place", city="Manhattan")
     #graph, location_orig, location_dest = get_graph_from_mode(address_from, address_to, mode="address", dist=3000)
 
     # Search information 
