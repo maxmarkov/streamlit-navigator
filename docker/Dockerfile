@@ -9,4 +9,6 @@ RUN ln -sv /usr/bin/python3 /usr/bin/python
 WORKDIR /home
 COPY ./ /home/
 
-#RUN pip3 install -r requirements.txt
+RUN pip3 install -r requirements.txt
+
+CMD ["streamlit", "run", "app.py"]
