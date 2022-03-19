@@ -8,7 +8,6 @@ List of current functionalities:
 
 - [x] Show different types of basemap 
 - [x] Show the shortest path between two selected points
-- [ ] Description
 - [ ] Docker
 
 ## Installation
