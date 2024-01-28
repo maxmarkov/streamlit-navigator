@@ -4,3 +4,7 @@ geopy~=2.2.0
 leafmap~=0.8.2
 osmnx~=1.1.2
 networkx~=2.7.1
+protobuf==3.20.*
+altair<5 
+click==8.0.4
+scikit-learn
